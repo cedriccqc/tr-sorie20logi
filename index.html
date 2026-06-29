@@ -227,13 +227,14 @@
 
     <div id="month-detail">
       <div class="stats">
-        <div class="stat-card"><div class="label">Logements</div><div class="value">20</div></div>
+        <div class="stat-card"><div class="label">Logements</div><div class="value" id="stat-count">20</div></div>
         <div class="stat-card"><div class="label">Payé</div><div class="value green" id="stat-paid">0</div></div>
         <div class="stat-card"><div class="label">En retard</div><div class="value red" id="stat-late">0</div></div>
         <div class="stat-card"><div class="label">Total perçu</div><div class="value" id="stat-total">0 $</div></div>
       </div>
+      <div class="btn-row"><button class="btn btn-primary" id="add-unit">+ Ajouter une unité</button></div>
       <table>
-        <thead><tr><th style="width:14%">Unité</th><th style="width:26%">Locataire</th><th style="width:14%">Loyer</th><th style="width:18%">Statut</th><th style="width:28%">Note</th></tr></thead>
+        <thead><tr><th style="width:13%">Unité</th><th style="width:23%">Locataire</th><th style="width:12%">Loyer</th><th style="width:16%">Statut</th><th style="width:26%">Note</th><th style="width:10%"></th></tr></thead>
         <tbody id="pay-body"></tbody>
       </table>
       <div class="export-row">
@@ -582,12 +583,13 @@ function renderPay(){
   const data = getMonthData(currentYear, currentMonth);
   const body = document.getElementById('pay-body');
   body.innerHTML = '';
+  document.getElementById('stat-count').textContent = data.units.length;
   data.units.forEach((u, idx)=>{
     const alert = isOverdueAlert(currentYear, currentMonth, u.status);
     const tr = document.createElement('tr');
     if(alert) tr.setAttribute('data-alert', '1');
     tr.innerHTML = `
-      <td>${u.unit}${alert ? ' <span title="Retard probable : aucun paiement enregistré après le 7e jour du mois" style="color:#b3261e; font-weight:600;">⚠</span>' : ''}</td>
+      <td><input data-idx="${idx}" data-field="unit" value="${u.unit}" placeholder="Unité" style="font-weight:600;">${alert ? ' <span title="Retard probable : aucun paiement enregistré après le 7e jour du mois" style="color:#b3261e; font-weight:600;">⚠</span>' : ''}</td>
       <td><input data-idx="${idx}" data-field="tenant" value="${u.tenant}" placeholder="Nom locataire"></td>
       <td><input data-idx="${idx}" data-field="rent" type="number" value="${u.rent}"></td>
       <td>
@@ -600,6 +602,7 @@ function renderPay(){
         </select>
       </td>
       <td><input data-idx="${idx}" data-field="note" value="${u.note}" placeholder="Note"></td>
+      <td><button class="btn" data-idx="${idx}" data-action="del-unit">Suppr.</button></td>
     `;
     body.appendChild(tr);
   });
@@ -618,6 +621,22 @@ function renderPay(){
       // de montant ou de texte ne met à jour que les statistiques en haut.
       if(field === 'status') renderPay();
       else refreshPayStats();
+      saveState();
+    });
+  });
+  body.querySelectorAll('[data-action="del-unit"]').forEach(btn=>{
+    btn.addEventListener('click', e=>{
+      if(!unlocked) return;
+      const idx = +e.target.dataset.idx;
+      const unitName = getMonthData(currentYear, currentMonth).units[idx].unit;
+      if(!confirm(`Supprimer l'unité "${unitName}" de TOUS les mois (passés et futurs) ? Cette action ne peut pas être annulée.`)) return;
+      // On supprime cette unité de tous les mois déjà existants en mémoire,
+      // pour que la suppression soit cohérente partout plutôt que de laisser
+      // l'unité réapparaître en changeant de mois.
+      Object.keys(state.months).forEach(key => {
+        state.months[key].units = state.months[key].units.filter(u => u.unit !== unitName);
+      });
+      renderPay();
       saveState();
     });
   });
@@ -667,6 +686,28 @@ function renderYearOverview(){
   }
 }
 
+document.getElementById('add-unit').addEventListener('click', ()=>{
+  if(!unlocked) return;
+  const name = prompt("Nom de la nouvelle unité (ex: Garage-1) :");
+  if(!name || !name.trim()) return;
+  const trimmedName = name.trim();
+  // Vérifie que ce nom n'existe pas déjà dans le mois courant pour éviter
+  // les doublons accidentels.
+  const current = getMonthData(currentYear, currentMonth);
+  if(current.units.some(u => u.unit === trimmedName)){
+    alert("Une unité avec ce nom existe déjà.");
+    return;
+  }
+  const newUnit = {unit: trimmedName, tenant: "", rent: 0, status: "due", note: ""};
+  // On ajoute la nouvelle unité à tous les mois déjà existants en mémoire,
+  // pour qu'elle apparaisse de façon cohérente partout plutôt que de
+  // disparaître en changeant de mois.
+  Object.keys(state.months).forEach(key => {
+    state.months[key].units.push({...newUnit});
+  });
+  renderPay();
+  saveState();
+});
 document.getElementById('prev-month').addEventListener('click', ()=>changeMonth(-1));
 document.getElementById('next-month').addEventListener('click', ()=>changeMonth(1));
 document.getElementById('toggle-year-overview').addEventListener('click', ()=>{
