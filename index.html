@@ -396,19 +396,27 @@ function defaultUnits(){
 }
 
 const JUNE_2026_STATUS = {
-  "392-01":"due", "392-02":"paid", "392-03":"paid", "392-04":"paid", "392-05":"paid",
-  "392-06":"paid", "392-07":"due", "392-08":"due", "392-09":"due", "392-10":"due",
-  "398-01":"due", "398-02":"due", "398-03":"due", "398-04":"due", "398-05":"paid",
-  "398-06":"due", "398-07":"due", "398-08":"due", "398-09":"due", "398-10":"due"
+  "392-01":"vacant", "392-02":"paid", "392-03":"paid", "392-04":"paid", "392-05":"paid",
+  "392-06":"paid", "392-07":"vacant", "392-08":"vacant", "392-09":"vacant", "392-10":"vacant",
+  "398-01":"vacant", "398-02":"vacant", "398-03":"vacant", "398-04":"vacant", "398-05":"paid",
+  "398-06":"vacant", "398-07":"vacant", "398-08":"vacant", "398-09":"vacant", "398-10":"vacant"
 };
 
 let state = {
   months: {}, // { "2026-07": { units: [...] } }
   expenses: {}, // { "2026-07": [ {id, category, amount, date, link, note} ] }
   requests: [],
-  tasks: [],
+  tasks: [
+    {id: 1, title: "Installé abris - tondeuse et souffleuse", due: "2026-06-29", status: "open"},
+    {id: 2, title: "Installer miroir salle de bain app - 392-05", due: "2026-06-29", status: "open"},
+    {id: 3, title: "Installer meuble salle de bain 392-06", due: "2026-06-29", status: "open"}
+  ],
   years: {}
 };
+// Marque si l'état ci-dessus (valeurs par défaut codées en dur) est encore
+// celui en mémoire, pour décider plus tard si on doit l'envoyer à Firestore
+// lors du premier chargement (voir loadState).
+let usingHardcodedDefaults = true;
 
 function getMonthData(y, m){
   const key = monthKey(y, m);
