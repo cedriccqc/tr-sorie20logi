@@ -1,0 +1,1070 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Opale Capital — Gestion immeuble</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=Open+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: "Open Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+    background: #F8F8F8;
+    color: #1a1a1a;
+    margin: 0;
+    padding: 24px;
+  }
+  .container { max-width: 1000px; margin: 0 auto; }
+  .brand { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; background: #003366; padding: 14px 20px; border-radius: 10px; }
+  .brand-mark { width: 30px; height: 30px; flex-shrink: 0; }
+  .brand-mark svg { width: 100%; height: 100%; }
+  .brand-text { display: flex; flex-direction: column; line-height: 1.1; }
+  .brand-name { font-family: "Montserrat", sans-serif; font-size: 17px; font-weight: 700; letter-spacing: 0.5px; color: #fff; }
+  .brand-sub { font-family: "Montserrat", sans-serif; font-size: 10px; font-weight: 500; letter-spacing: 2px; color: #C0C0C0; }
+  h1 { font-family: "Montserrat", sans-serif; font-size: 18px; font-weight: 600; margin: 0 0 4px; color: #1a1a1a; }
+  .subtitle { color: #6A7F99; font-size: 14px; margin: 0 0 20px; }
+
+  .lockbar {
+    display: flex; align-items: center; gap: 10px;
+    background: #fff; border: 1px solid #ddd; border-radius: 10px;
+    padding: 12px 16px; margin-bottom: 20px;
+  }
+  .lockbar .status { flex: 1; font-size: 14px; }
+  .lockbar input[type="password"] { width: 110px; }
+  .locked-badge { color: #a32d2d; font-weight: 600; }
+  .unlocked-badge { color: #277f0a; font-weight: 600; }
+
+  .tabs { display: flex; gap: 6px; margin-bottom: 20px; border-bottom: 1px solid #ddd; padding-bottom: 8px; }
+  .tab-btn {
+    flex: 1; padding: 10px; border: none; background: transparent;
+    border-radius: 8px; cursor: pointer; font-size: 14px; color: #444;
+  }
+  .tab-btn.active { background: #003366; color: #fff; font-weight: 600; }
+
+  .view { display: none; }
+  .view.active { display: block; }
+
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
+  .stat-card { background: #fff; border: 1px solid #e5e5e5; border-radius: 10px; padding: 14px; }
+  .stat-card .label { font-size: 12px; color: #777; margin-bottom: 4px; }
+  .stat-card .value { font-size: 22px; font-weight: 700; }
+  .stat-card .value.green { color: #1d7a3a; }
+  .stat-card .value.red { color: #b3261e; }
+  tr[data-alert="1"] { background: #fdecea; }
+
+  table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 10px; overflow: hidden; }
+  th, td { padding: 8px 10px; font-size: 13px; text-align: left; border-bottom: 1px solid #eee; }
+  th { color: #777; font-weight: 600; background: #fafafa; }
+  input, select { width: 100%; padding: 6px 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 13px; font-family: inherit; }
+  input:disabled, select:disabled { background: #f5f5f5; color: #888; }
+
+  .card { background: #fff; border: 1px solid #e5e5e5; border-radius: 10px; padding: 14px; margin-bottom: 10px; }
+  .card-row { display: flex; gap: 10px; align-items: center; margin-bottom: 8px; }
+  .card-row input[type="text"], .card-row input:not([type]) { flex: 1; font-weight: 600; }
+
+  .btn { padding: 8px 14px; border-radius: 8px; border: 1px solid #ccc; background: #fff; cursor: pointer; font-size: 13px; }
+  .btn:hover { background: #f0f0f0; }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .btn-primary { background: #003366; color: #fff; border-color: #003366; }
+  .btn-primary:hover { background: #002347; }
+  .btn-row { display: flex; justify-content: flex-end; gap: 8px; margin-bottom: 14px; }
+
+  .export-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 20px; padding-top: 16px; border-top: 1px solid #ddd; }
+
+  .year-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; margin-bottom: 20px; }
+  .field label { display: block; font-size: 12px; color: #777; margin-bottom: 4px; }
+  .net.positive { color: #1d7a3a; font-weight: 600; }
+  .net.negative { color: #b3261e; font-weight: 600; }
+
+  .month-nav { display: flex; align-items: center; gap: 10px; margin-bottom: 18px; }
+  .month-label { font-size: 16px; font-weight: 600; min-width: 160px; text-align: center; }
+  .year-overview { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 20px; }
+  .month-mini { background: #fff; border: 1px solid #e5e5e5; border-radius: 10px; padding: 10px; cursor: pointer; text-align: center; }
+  .month-mini:hover { border-color: #999; }
+  .month-mini.current { border-color: #003366; border-width: 2px; }
+  .month-mini .m-name { font-size: 13px; font-weight: 600; margin-bottom: 6px; }
+  .month-mini .m-stats { font-size: 11px; color: #777; }
+
+  /* Ecran de connexion */
+  #login-screen {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: #F8F8F8; display: flex; align-items: center; justify-content: center;
+    z-index: 1000;
+  }
+  #login-box {
+    background: #fff; border-radius: 12px; padding: 32px; width: 100%; max-width: 360px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08); text-align: center;
+  }
+  #login-box .brand-mark { width: 36px; height: 36px; margin: 0 auto 12px; }
+  #login-box h2 { font-family: "Montserrat", sans-serif; margin: 0 0 4px; color: #003366; }
+  #login-box p { color: #6A7F99; font-size: 13px; margin: 0 0 20px; }
+  #login-box input { width: 100%; margin-bottom: 10px; height: 38px; }
+  #login-box button { width: 100%; height: 38px; margin-top: 6px; }
+  #login-error { color: #b3261e; font-size: 13px; margin-top: 10px; min-height: 18px; }
+  #app-content { display: none; }
+  #logout-bar { display: flex; justify-content: flex-end; margin-bottom: 8px; }
+  #logout-bar button { font-size: 12px; }
+</style>
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+  import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyDEkPiRdF8P08TFCYfIuw_m0KHkh1M7Ojw",
+    authDomain: "opale-capital-gestion.firebaseapp.com",
+    projectId: "opale-capital-gestion",
+    storageBucket: "opale-capital-gestion.firebasestorage.app",
+    messagingSenderId: "926968432763",
+    appId: "1:926968432763:web:6919ed092881f26af9bade"
+  };
+
+  const firebaseApp = initializeApp(firebaseConfig);
+  const auth = getAuth(firebaseApp);
+  const db = getFirestore(firebaseApp);
+
+  // On expose ces objets sur window pour que le reste du script (non-module)
+  // puisse s'en servir facilement.
+  window.__firebase = { auth, db, doc, getDoc, setDoc, signInWithEmailAndPassword, onAuthStateChanged, signOut };
+
+  onAuthStateChanged(auth, (user) => {
+    const loginScreen = document.getElementById('login-screen');
+    const appContent = document.getElementById('app-content');
+    if(user){
+      loginScreen.style.display = 'none';
+      appContent.style.display = 'block';
+      window.dispatchEvent(new CustomEvent('firebase-ready', { detail: { uid: user.uid } }));
+    } else {
+      loginScreen.style.display = 'flex';
+      appContent.style.display = 'none';
+    }
+  });
+
+  document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('login-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = document.getElementById('login-email').value;
+      const password = document.getElementById('login-password').value;
+      const errorEl = document.getElementById('login-error');
+      errorEl.textContent = '';
+      try {
+        await signInWithEmailAndPassword(auth, email, password);
+      } catch(err){
+        errorEl.textContent = "Courriel ou mot de passe incorrect.";
+      }
+    });
+    document.getElementById('logout-btn').addEventListener('click', () => {
+      signOut(auth);
+    });
+  });
+</script>
+</head>
+<body>
+<div id="login-screen">
+  <div id="login-box">
+    <div class="brand-mark">
+      <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="#003366" stroke-width="9">
+        <path d="M30 170 L30 60 L65 20 L65 90 L100 130 L100 60 L135 20 L135 170" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M65 90 L100 90" stroke-linecap="round"/>
+      </svg>
+    </div>
+    <h2>Opale Capital</h2>
+    <p>Connexion à l'outil de gestion</p>
+    <form id="login-form">
+      <input type="email" id="login-email" placeholder="Courriel" required>
+      <input type="password" id="login-password" placeholder="Mot de passe" required>
+      <button type="submit" class="btn btn-primary">Se connecter</button>
+    </form>
+    <div id="login-error"></div>
+  </div>
+</div>
+
+<div id="app-content">
+<div class="container">
+  <div id="logout-bar"><button id="logout-btn" class="btn">Se déconnecter</button></div>
+  <div class="brand">
+    <div class="brand-mark">
+      <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="#ffffff" stroke-width="9">
+        <path d="M30 170 L30 60 L65 20 L65 90 L100 130 L100 60 L135 20 L135 170" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M65 90 L100 90" stroke-linecap="round"/>
+      </svg>
+    </div>
+    <div class="brand-text">
+      <span class="brand-name">OPALE</span>
+      <span class="brand-sub">CAPITAL</span>
+    </div>
+  </div>
+  <h1>Gestion immeuble — 20 logements</h1>
+  <p class="subtitle">Suivi des paiements, demandes des locataires, tâches et portrait annuel</p>
+
+  <div class="lockbar">
+    <span id="lock-status" class="status locked-badge">Mode lecture seule</span>
+    <input type="password" id="code-input" maxlength="4" placeholder="Code 4 chiffres">
+    <button class="btn" id="unlock-btn">Déverrouiller</button>
+    <button class="btn" id="lock-btn" style="display:none;">Verrouiller</button>
+    <button class="btn" id="change-code-btn" style="display:none;">Changer le code</button>
+  </div>
+
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="pay">Paiements</button>
+    <button class="tab-btn" data-tab="exp">Dépenses</button>
+    <button class="tab-btn" data-tab="cash">Cashflow</button>
+    <button class="tab-btn" data-tab="req">Demandes</button>
+    <button class="tab-btn" data-tab="task">Tâches</button>
+    <button class="tab-btn" data-tab="year">Portrait annuel</button>
+  </div>
+
+  <!-- PAIEMENTS -->
+  <div class="view active" id="view-pay">
+    <div class="month-nav">
+      <button class="btn" id="prev-month">&laquo; Précédent</button>
+      <span id="month-label" class="month-label">Juillet 2026</span>
+      <button class="btn" id="next-month">Suivant &raquo;</button>
+      <button class="btn" id="toggle-year-overview" style="margin-left:auto;">Aperçu de l'année</button>
+    </div>
+
+    <div id="year-overview" class="year-overview" style="display:none;"></div>
+
+    <div id="month-detail">
+      <div class="stats">
+        <div class="stat-card"><div class="label">Logements</div><div class="value">20</div></div>
+        <div class="stat-card"><div class="label">Payé</div><div class="value green" id="stat-paid">0</div></div>
+        <div class="stat-card"><div class="label">En retard</div><div class="value red" id="stat-late">0</div></div>
+        <div class="stat-card"><div class="label">Total perçu</div><div class="value" id="stat-total">0 $</div></div>
+      </div>
+      <table>
+        <thead><tr><th style="width:14%">Unité</th><th style="width:26%">Locataire</th><th style="width:14%">Loyer</th><th style="width:18%">Statut</th><th style="width:28%">Note</th></tr></thead>
+        <tbody id="pay-body"></tbody>
+      </table>
+      <div class="export-row">
+        <button class="btn" id="export-pay">Exporter ce mois (CSV)</button>
+        <button class="btn" id="export-pay-year">Exporter toute l'année (CSV)</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- DEPENSES -->
+  <div class="view" id="view-exp">
+    <div class="month-nav">
+      <button class="btn" id="prev-month-exp">&laquo; Précédent</button>
+      <span id="month-label-exp" class="month-label">Juillet 2026</span>
+      <button class="btn" id="next-month-exp">Suivant &raquo;</button>
+      <button class="btn" id="toggle-exp-summary" style="margin-left:auto;">Résumé annuel des dépenses</button>
+    </div>
+
+    <div id="exp-summary" class="year-overview" style="display:none; grid-template-columns: repeat(2,1fr);"></div>
+
+    <div id="exp-detail">
+      <div class="stats">
+        <div class="stat-card"><div class="label">Dépenses du mois</div><div class="value red" id="stat-exp-total">0 $</div></div>
+        <div class="stat-card"><div class="label">Nombre d'entrées</div><div class="value" id="stat-exp-count">0</div></div>
+      </div>
+      <div class="btn-row"><button class="btn btn-primary" id="add-exp">+ Nouvelle dépense</button></div>
+      <table>
+        <thead><tr><th style="width:18%">Catégorie</th><th style="width:14%">Montant</th><th style="width:14%">Date</th><th style="width:24%">Lien facture (Drive)</th><th style="width:20%">Note</th><th style="width:10%"></th></tr></thead>
+        <tbody id="exp-body"></tbody>
+      </table>
+      <div class="export-row">
+        <button class="btn" id="export-exp">Exporter ce mois (CSV)</button>
+        <button class="btn" id="export-exp-year">Exporter toute l'année (CSV)</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- CASHFLOW -->
+  <div class="view" id="view-cash">
+    <div class="card-row" style="margin-bottom:16px;">
+      <label style="font-size:13px; color:#777; margin-right:8px;">Année</label>
+      <input type="number" id="cash-year-input" value="2026" style="width:100px; flex:none;">
+    </div>
+    <div class="stats">
+      <div class="stat-card"><div class="label">Revenus de l'année</div><div class="value green" id="cash-revenue-total">0 $</div></div>
+      <div class="stat-card"><div class="label">Dépenses de l'année</div><div class="value red" id="cash-expense-total">0 $</div></div>
+      <div class="stat-card"><div class="label">Net de l'année</div><div class="value" id="cash-net-total">0 $</div></div>
+      <div class="stat-card"><div class="label">Marge moyenne</div><div class="value" id="cash-margin">0%</div></div>
+    </div>
+    <table>
+      <thead><tr><th>Mois</th><th>Revenus</th><th>Dépenses</th><th>Net</th></tr></thead>
+      <tbody id="cash-body"></tbody>
+    </table>
+    <div class="export-row">
+      <button class="btn" id="export-cash">Exporter cashflow annuel (CSV)</button>
+    </div>
+  </div>
+
+  <!-- DEMANDES -->
+  <div class="view" id="view-req">
+    <div class="btn-row"><button class="btn btn-primary" id="add-req">+ Nouvelle demande</button></div>
+    <div id="req-list"></div>
+    <div class="export-row">
+      <button class="btn" id="export-req">Exporter Demandes (CSV)</button>
+    </div>
+  </div>
+
+  <!-- TACHES -->
+  <div class="view" id="view-task">
+    <div class="btn-row"><button class="btn btn-primary" id="add-task">+ Nouvelle tâche</button></div>
+    <div id="task-list"></div>
+    <div class="export-row">
+      <button class="btn" id="export-task">Exporter Tâches (CSV)</button>
+    </div>
+  </div>
+
+  <!-- PORTRAIT ANNUEL -->
+  <div class="view" id="view-year">
+    <div class="card-row" style="margin-bottom:16px;">
+      <label style="font-size:13px; color:#777; margin-right:8px;">Année</label>
+      <input type="number" id="year-input" value="2026" style="width:100px; flex:none;">
+      <button class="btn btn-primary" id="save-year">Enregistrer cette année</button>
+    </div>
+    <div class="year-grid">
+      <div class="field"><label>Revenus totaux ($)</label><input type="number" id="y-revenue"></div>
+      <div class="field"><label>Dépenses totales ($)</label><input type="number" id="y-expenses"></div>
+      <div class="field"><label>Taux d'occupation moyen (%)</label><input type="number" id="y-occupancy"></div>
+      <div class="field"><label>Mois avec retards de paiement</label><input type="number" id="y-late"></div>
+    </div>
+    <table>
+      <thead><tr><th>Année</th><th>Revenus</th><th>Dépenses</th><th>Net</th><th>Occupation</th><th>Mois retard</th></tr></thead>
+      <tbody id="year-body"></tbody>
+    </table>
+    <div class="export-row">
+      <button class="btn" id="export-year">Exporter Portrait annuel (CSV)</button>
+    </div>
+  </div>
+
+  <div style="margin-top:30px; font-size:12px; color:#999; text-align:center;">
+    Les données sont sauvegardées automatiquement dans ce navigateur. Pour les partager avec d'autres appareils ou personnes, exportez en CSV et envoyez le fichier, ou copiez ce fichier HTML sur un Drive partagé (note : chaque copie garde ses propres données séparément, sans synchronisation automatique).
+  </div>
+</div>
+
+<script>
+const STORAGE_KEY = "gestion-immeuble-20log";
+
+// Wrapper sécurisé pour localStorage : certains navigateurs bloquent localStorage
+// quand le fichier est ouvert directement depuis le disque (file://). On utilise
+// un objet en mémoire comme solution de repli pour que l'outil reste fonctionnel
+// même si la persistance entre sessions n'est pas possible.
+const memoryFallback = {};
+const safeStorage = {
+  getItem(key){
+    try { return localStorage.getItem(key); }
+    catch(e){ return memoryFallback[key] !== undefined ? memoryFallback[key] : null; }
+  },
+  setItem(key, value){
+    try { localStorage.setItem(key, value); }
+    catch(e){ memoryFallback[key] = value; }
+  }
+};
+
+let unlocked = false;
+let editCode = safeStorage.getItem(STORAGE_KEY + "-code") || "1234";
+
+const MONTH_NAMES = ["Janvier","Février","Mars","Avril","Mai","Juin","Juillet","Août","Septembre","Octobre","Novembre","Décembre"];
+const START_YEAR = 2026;
+const START_MONTH = 5; // juin = index 5 (0-based)
+
+let currentYear = START_YEAR;
+let currentMonth = START_MONTH;
+let currentExpYear = START_YEAR;
+let currentExpMonth = START_MONTH;
+
+function monthKey(y, m){ return y + "-" + String(m+1).padStart(2,'0'); }
+
+function defaultUnits(){
+  return [
+    {unit:"392-01", tenant:"Nathalie Boisclair", rent:624, status:"due", note:""},
+    {unit:"392-02", tenant:"Alain Prévost", rent:1000, status:"due", note:""},
+    {unit:"392-03", tenant:"Aminata", rent:1050, status:"due", note:""},
+    {unit:"392-04", tenant:"Aline Pimparé", rent:1000, status:"due", note:""},
+    {unit:"392-05", tenant:"Mathieu Presseault", rent:1020, status:"due", note:""},
+    {unit:"392-06", tenant:"Sylvain Loparis", rent:1000, status:"due", note:""},
+    {unit:"392-07", tenant:"Claude Danis-Lépine", rent:1000, status:"due", note:""},
+    {unit:"392-08", tenant:"Étienne Monette", rent:1000, status:"due", note:""},
+    {unit:"392-09", tenant:"Lorraine Gauthier", rent:1000, status:"due", note:""},
+    {unit:"392-10", tenant:"Samuel Lafrance", rent:1000, status:"due", note:""},
+    {unit:"398-01", tenant:"Léonne Beslile", rent:622, status:"due", note:""},
+    {unit:"398-02", tenant:"Stéphane St-Louis", rent:1000, status:"due", note:""},
+    {unit:"398-03", tenant:"Marie-Christine Clervil", rent:850, status:"due", note:""},
+    {unit:"398-04", tenant:"Claire L'Espérance", rent:1000, status:"due", note:""},
+    {unit:"398-05", tenant:"Sylvain Lortie", rent:1000, status:"due", note:""},
+    {unit:"398-06", tenant:"Serge Sauvé", rent:1000, status:"due", note:""},
+    {unit:"398-07", tenant:"France Latreille", rent:1000, status:"due", note:""},
+    {unit:"398-08", tenant:"Simon Dechamplain", rent:1000, status:"due", note:""},
+    {unit:"398-09", tenant:"Christopher Huot", rent:1000, status:"due", note:""},
+    {unit:"398-10", tenant:"Kassandra Papineau", rent:1000, status:"due", note:""}
+  ];
+}
+
+const JUNE_2026_STATUS = {
+  "392-01":"due", "392-02":"paid", "392-03":"paid", "392-04":"paid", "392-05":"paid",
+  "392-06":"paid", "392-07":"due", "392-08":"due", "392-09":"due", "392-10":"due",
+  "398-01":"due", "398-02":"due", "398-03":"due", "398-04":"due", "398-05":"paid",
+  "398-06":"due", "398-07":"due", "398-08":"due", "398-09":"due", "398-10":"due"
+};
+
+let state = {
+  months: {}, // { "2026-07": { units: [...] } }
+  expenses: {}, // { "2026-07": [ {id, category, amount, date, link, note} ] }
+  requests: [],
+  tasks: [],
+  years: {}
+};
+
+function getMonthData(y, m){
+  const key = monthKey(y, m);
+  if(!state.months[key]){
+    let prevM = m - 1, prevY = y;
+    if(prevM < 0){ prevM = 11; prevY = y - 1; }
+    const prevKey = monthKey(prevY, prevM);
+    if(state.months[prevKey]){
+      state.months[key] = {
+        units: state.months[prevKey].units.map(u => ({...u, status: "due", note: ""}))
+      };
+    } else {
+      const units = defaultUnits();
+      // Pré-remplir juin 2026 avec les statuts réels connus
+      if(key === "2026-06"){
+        units.forEach(u => { u.status = JUNE_2026_STATUS[u.unit] || "due"; });
+      }
+      state.months[key] = { units };
+    }
+  }
+  // Migration de robustesse : garantit que chaque unité a tous les champs
+  // attendus, même si elle vient d'une version antérieure de l'outil.
+  state.months[key].units.forEach(u => {
+    if(u.note === undefined) u.note = '';
+  });
+  return state.months[key];
+}
+
+function getExpenseData(y, m){
+  const key = monthKey(y, m);
+  if(!state.expenses[key]) state.expenses[key] = [];
+  return state.expenses[key];
+}
+
+// Identifiant du document Firestore où toutes les données de l'immeuble sont
+// stockées. On utilise un seul document partagé (pas par utilisateur) pour
+// que toi et Antoine voyiez les mêmes données peu importe qui se connecte.
+const FIRESTORE_DOC_PATH = ['gestion-immeuble', 'opale-392-398'];
+
+async function loadState(){
+  // On tente d'abord Firestore (la vraie source partagée). Si ça échoue
+  // pour une raison quelconque (hors ligne, erreur réseau), on retombe sur
+  // la copie locale précédente pour ne jamais bloquer complètement l'outil.
+  try {
+    const { db, doc, getDoc } = window.__firebase;
+    const ref = doc(db, ...FIRESTORE_DOC_PATH);
+    const snap = await getDoc(ref);
+    if(snap.exists()){
+      const parsed = snap.data();
+      state = {
+        months: parsed.months || {},
+        expenses: parsed.expenses || {},
+        requests: parsed.requests || [],
+        tasks: parsed.tasks || [],
+        years: parsed.years || {}
+      };
+      // On garde une copie locale de secours en cas de perte de connexion future.
+      safeStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      return;
+    }
+  } catch(e){
+    console.error('Erreur de chargement Firestore, repli sur la copie locale:', e);
+  }
+  // Repli : copie locale précédente (utile hors ligne ou lors du tout premier
+  // chargement avant que des données existent dans Firestore).
+  const raw = safeStorage.getItem(STORAGE_KEY);
+  if(raw){
+    try{
+      const parsed = JSON.parse(raw);
+      state = {
+        months: parsed.months || {},
+        expenses: parsed.expenses || {},
+        requests: parsed.requests || [],
+        tasks: parsed.tasks || [],
+        years: parsed.years || {}
+      };
+    }catch(e){}
+  }
+}
+
+let saveInFlight = null;
+async function saveState(){
+  // Sauvegarde locale immédiate (rapide, jamais bloquante) en complément de
+  // la sauvegarde en ligne, pour ne jamais perdre de données si le réseau
+  // coupe au mauvais moment.
+  safeStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  try {
+    const { db, doc, setDoc } = window.__firebase;
+    const ref = doc(db, ...FIRESTORE_DOC_PATH);
+    // On évite d'empiler des sauvegardes concurrentes : si une sauvegarde est
+    // déjà en cours, on attend qu'elle finisse avant de lancer la suivante.
+    if(saveInFlight) await saveInFlight;
+    saveInFlight = setDoc(ref, state);
+    await saveInFlight;
+  } catch(e){
+    console.error('Erreur de sauvegarde Firestore (donnée gardée localement en attendant):', e);
+  } finally {
+    saveInFlight = null;
+  }
+}
+
+function applyLockUI(){
+  document.querySelectorAll('input, select, button').forEach(el=>{
+    if(['code-input','unlock-btn','lock-btn','change-code-btn','prev-month','next-month','toggle-year-overview','prev-month-exp','next-month-exp','toggle-exp-summary','cash-year-input'].includes(el.id)) return;
+    if(el.classList.contains('tab-btn')) return;
+    if(el.classList.contains('month-mini')) return;
+    if(el.id && el.id.startsWith('export-')) return;
+    el.disabled = !unlocked;
+  });
+  document.getElementById('lock-status').textContent = unlocked ? "Mode modification activé" : "Mode lecture seule";
+  document.getElementById('lock-status').className = "status " + (unlocked ? "unlocked-badge" : "locked-badge");
+  document.getElementById('unlock-btn').style.display = unlocked ? "none" : "inline-block";
+  document.getElementById('lock-btn').style.display = unlocked ? "inline-block" : "none";
+  document.getElementById('change-code-btn').style.display = unlocked ? "inline-block" : "none";
+}
+
+document.getElementById('unlock-btn').addEventListener('click', ()=>{
+  const val = document.getElementById('code-input').value;
+  if(val === editCode){
+    unlocked = true;
+    document.getElementById('code-input').value = '';
+    applyLockUI();
+  } else {
+    alert("Code incorrect.");
+  }
+});
+document.getElementById('lock-btn').addEventListener('click', ()=>{
+  unlocked = false;
+  applyLockUI();
+});
+document.getElementById('change-code-btn').addEventListener('click', ()=>{
+  const nc = prompt("Nouveau code à 4 chiffres :");
+  if(nc && /^\d{4}$/.test(nc)){
+    editCode = nc;
+    safeStorage.setItem(STORAGE_KEY + "-code", editCode);
+    alert("Code mis à jour.");
+  }
+});
+
+function isOverdueAlert(y, m, status){
+  // Alerte visuelle automatique : si on est après le 7e jour du mois affiché ET
+  // que le mois affiché correspond au mois/année réel courant (ou est passé),
+  // et que le statut est toujours "à venir", on signale visuellement sans
+  // changer le statut manuel (qui reste sous le contrôle de l'utilisateur).
+  if(status !== 'due') return false;
+  const today = new Date();
+  const isPastMonth = (y < today.getFullYear()) || (y === today.getFullYear() && m < today.getMonth());
+  const isCurrentMonthPastSeventh = (y === today.getFullYear() && m === today.getMonth() && today.getDate() > 7);
+  return isPastMonth || isCurrentMonthPastSeventh;
+}
+
+function computePayStats(data){
+  let paid=0, late=0, total=0;
+  data.units.forEach(u => {
+    if(u.status === 'paid'){ paid++; total += Number(u.rent)||0; }
+    if(u.status === 'late' || isOverdueAlert(currentYear, currentMonth, u.status)) late++;
+  });
+  return {paid, late, total};
+}
+
+function renderPay(){
+  document.getElementById('month-label').textContent = MONTH_NAMES[currentMonth] + " " + currentYear;
+  const data = getMonthData(currentYear, currentMonth);
+  const body = document.getElementById('pay-body');
+  body.innerHTML = '';
+  data.units.forEach((u, idx)=>{
+    const alert = isOverdueAlert(currentYear, currentMonth, u.status);
+    const tr = document.createElement('tr');
+    if(alert) tr.setAttribute('data-alert', '1');
+    tr.innerHTML = `
+      <td>${u.unit}${alert ? ' <span title="Retard probable : aucun paiement enregistré après le 7e jour du mois" style="color:#b3261e; font-weight:600;">⚠</span>' : ''}</td>
+      <td><input data-idx="${idx}" data-field="tenant" value="${u.tenant}" placeholder="Nom locataire"></td>
+      <td><input data-idx="${idx}" data-field="rent" type="number" value="${u.rent}"></td>
+      <td>
+        <select data-idx="${idx}" data-field="status">
+          <option value="due" ${u.status==='due'?'selected':''}>À venir</option>
+          <option value="paid" ${u.status==='paid'?'selected':''}>Payé</option>
+          <option value="partial" ${u.status==='partial'?'selected':''}>Partiel</option>
+          <option value="late" ${u.status==='late'?'selected':''}>En retard</option>
+          <option value="vacant" ${u.status==='vacant'?'selected':''}>Vacant</option>
+        </select>
+      </td>
+      <td><input data-idx="${idx}" data-field="note" value="${u.note}" placeholder="Note"></td>
+    `;
+    body.appendChild(tr);
+  });
+  refreshPayStats();
+
+  body.querySelectorAll('input,select').forEach(el=>{
+    el.addEventListener('input', e=>{
+      if(!unlocked) return;
+      const idx = +e.target.dataset.idx;
+      const field = e.target.dataset.field;
+      const d = getMonthData(currentYear, currentMonth);
+      d.units[idx][field] = field === 'rent' ? (+e.target.value || 0) : e.target.value;
+      // On évite de tout reconstruire pendant la saisie (ça ferait perdre le
+      // focus du champ à chaque frappe). Seul un changement de statut a besoin
+      // de redessiner la ligne complète (icône d'alerte, etc.) ; un changement
+      // de montant ou de texte ne met à jour que les statistiques en haut.
+      if(field === 'status') renderPay();
+      else refreshPayStats();
+      saveState();
+    });
+  });
+  applyLockUI();
+}
+
+function refreshPayStats(){
+  const data = getMonthData(currentYear, currentMonth);
+  const {paid, late, total} = computePayStats(data);
+  document.getElementById('stat-paid').textContent = paid;
+  document.getElementById('stat-late').textContent = late;
+  document.getElementById('stat-total').textContent = total.toLocaleString('fr-CA') + ' $';
+}
+
+function changeMonth(delta){
+  currentMonth += delta;
+  if(currentMonth > 11){ currentMonth = 0; currentYear++; }
+  if(currentMonth < 0){ currentMonth = 11; currentYear--; }
+  renderPay();
+  if(document.getElementById('year-overview').style.display !== 'none'){
+    renderYearOverview();
+  }
+}
+
+function renderYearOverview(){
+  const wrap = document.getElementById('year-overview');
+  wrap.innerHTML = '';
+  for(let m=0; m<12; m++){
+    const data = getMonthData(currentYear, m);
+    let paid=0, late=0;
+    data.units.forEach(u=>{
+      if(u.status==='paid') paid++;
+      if(u.status==='late') late++;
+    });
+    const div = document.createElement('div');
+    div.className = 'month-mini' + (m === currentMonth ? ' current' : '');
+    div.innerHTML = `
+      <div class="m-name">${MONTH_NAMES[m]}</div>
+      <div class="m-stats">${paid}/20 payé · ${late} retard</div>
+    `;
+    div.addEventListener('click', ()=>{
+      currentMonth = m;
+      renderPay();
+      renderYearOverview();
+    });
+    wrap.appendChild(div);
+  }
+}
+
+document.getElementById('prev-month').addEventListener('click', ()=>changeMonth(-1));
+document.getElementById('next-month').addEventListener('click', ()=>changeMonth(1));
+document.getElementById('toggle-year-overview').addEventListener('click', ()=>{
+  const wrap = document.getElementById('year-overview');
+  const isHidden = wrap.style.display === 'none';
+  wrap.style.display = isHidden ? 'grid' : 'none';
+  if(isHidden) renderYearOverview();
+});
+
+// ---------- DEPENSES ----------
+const EXP_CATEGORIES = ["Entretien","Taxes municipales","Taxes scolaires","Assurances","Hypothèque","Électricité","Chauffage","Déneigement","Conciergerie","Frais légaux/comptables","Autre"];
+
+function renderExp(){
+  document.getElementById('month-label-exp').textContent = MONTH_NAMES[currentExpMonth] + " " + currentExpYear;
+  const list = getExpenseData(currentExpYear, currentExpMonth);
+  const body = document.getElementById('exp-body');
+  body.innerHTML = '';
+  list.forEach(e => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>
+        <select data-id="${e.id}" data-field="category">
+          ${EXP_CATEGORIES.map(c => `<option value="${c}" ${e.category===c?'selected':''}>${c}</option>`).join('')}
+        </select>
+      </td>
+      <td><input data-id="${e.id}" data-field="amount" type="number" value="${e.amount}"></td>
+      <td><input data-id="${e.id}" data-field="date" type="date" value="${e.date || ''}"></td>
+      <td><input data-id="${e.id}" data-field="link" type="text" value="${e.link || ''}" placeholder="Lien Drive"></td>
+      <td><input data-id="${e.id}" data-field="note" type="text" value="${e.note || ''}" placeholder="Note"></td>
+      <td><button class="btn" data-id="${e.id}" data-action="del-exp">Suppr.</button></td>
+    `;
+    body.appendChild(tr);
+  });
+  refreshExpStats();
+
+  body.querySelectorAll('input,select').forEach(el=>{
+    el.addEventListener('input', e=>{
+      if(!unlocked) return;
+      const id = e.target.dataset.id;
+      const field = e.target.dataset.field;
+      const arr = getExpenseData(currentExpYear, currentExpMonth);
+      const idx = arr.findIndex(x => String(x.id) === id);
+      if(idx > -1){
+        arr[idx][field] = field === 'amount' ? (+e.target.value || 0) : e.target.value;
+      }
+      // Comme pour les paiements : on ne reconstruit pas tout le tableau
+      // pendant la saisie d'un montant, pour ne pas faire perdre le focus.
+      refreshExpStats();
+      saveState();
+    });
+  });
+  body.querySelectorAll('[data-action="del-exp"]').forEach(btn=>{
+    btn.addEventListener('click', e=>{
+      if(!unlocked) return;
+      const id = e.target.dataset.id;
+      const arr = getExpenseData(currentExpYear, currentExpMonth);
+      state.expenses[monthKey(currentExpYear, currentExpMonth)] = arr.filter(x => String(x.id) !== id);
+      renderExp();
+      saveState();
+    });
+  });
+  applyLockUI();
+}
+
+function refreshExpStats(){
+  const list = getExpenseData(currentExpYear, currentExpMonth);
+  const total = list.reduce((sum, e) => sum + (Number(e.amount)||0), 0);
+  document.getElementById('stat-exp-total').textContent = total.toLocaleString('fr-CA') + ' $';
+  document.getElementById('stat-exp-count').textContent = list.length;
+}
+
+function changeExpMonth(delta){
+  currentExpMonth += delta;
+  if(currentExpMonth > 11){ currentExpMonth = 0; currentExpYear++; }
+  if(currentExpMonth < 0){ currentExpMonth = 11; currentExpYear--; }
+  renderExp();
+  if(document.getElementById('exp-summary').style.display !== 'none'){
+    renderExpSummary();
+  }
+}
+
+function renderExpSummary(){
+  const wrap = document.getElementById('exp-summary');
+  wrap.innerHTML = '';
+  const totals = {};
+  EXP_CATEGORIES.forEach(c => totals[c] = 0);
+  let grandTotal = 0;
+  for(let m=0; m<12; m++){
+    const list = getExpenseData(currentExpYear, m);
+    list.forEach(e => {
+      totals[e.category] = (totals[e.category] || 0) + (Number(e.amount)||0);
+      grandTotal += Number(e.amount)||0;
+    });
+  }
+  EXP_CATEGORIES.forEach(c => {
+    if(totals[c] > 0){
+      const div = document.createElement('div');
+      div.className = 'month-mini';
+      div.innerHTML = `<div class="m-name">${c}</div><div class="m-stats">${totals[c].toLocaleString('fr-CA')} $</div>`;
+      wrap.appendChild(div);
+    }
+  });
+  const totalDiv = document.createElement('div');
+  totalDiv.className = 'month-mini current';
+  totalDiv.innerHTML = `<div class="m-name">Total ${currentExpYear}</div><div class="m-stats">${grandTotal.toLocaleString('fr-CA')} $</div>`;
+  wrap.appendChild(totalDiv);
+}
+
+document.getElementById('prev-month-exp').addEventListener('click', ()=>changeExpMonth(-1));
+document.getElementById('next-month-exp').addEventListener('click', ()=>changeExpMonth(1));
+document.getElementById('toggle-exp-summary').addEventListener('click', ()=>{
+  const wrap = document.getElementById('exp-summary');
+  const isHidden = wrap.style.display === 'none';
+  wrap.style.display = isHidden ? 'grid' : 'none';
+  if(isHidden) renderExpSummary();
+});
+document.getElementById('add-exp').addEventListener('click', ()=>{
+  if(!unlocked) return;
+  const arr = getExpenseData(currentExpYear, currentExpMonth);
+  arr.push({id: Date.now(), category: "Entretien", amount: 0, date: "", link: "", note: ""});
+  renderExp();
+  saveState();
+});
+
+// ---------- CASHFLOW ----------
+function monthRevenue(y, m){
+  const data = getMonthData(y, m);
+  return data.units.reduce((sum, u) => sum + (u.status === 'paid' ? (Number(u.rent)||0) : 0), 0);
+}
+function monthExpenseTotal(y, m){
+  const list = getExpenseData(y, m);
+  return list.reduce((sum, e) => sum + (Number(e.amount)||0), 0);
+}
+
+function renderCashflow(){
+  const y = +document.getElementById('cash-year-input').value || currentYear;
+  const body = document.getElementById('cash-body');
+  body.innerHTML = '';
+  let revTotal = 0, expTotal = 0;
+  for(let m=0; m<12; m++){
+    const rev = monthRevenue(y, m);
+    const exp = monthExpenseTotal(y, m);
+    const net = rev - exp;
+    revTotal += rev; expTotal += exp;
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${MONTH_NAMES[m]}</td>
+      <td>${rev.toLocaleString('fr-CA')} $</td>
+      <td>${exp.toLocaleString('fr-CA')} $</td>
+      <td class="${net >= 0 ? 'net positive' : 'net negative'}">${net.toLocaleString('fr-CA')} $</td>
+    `;
+    body.appendChild(tr);
+  }
+  const netTotal = revTotal - expTotal;
+  document.getElementById('cash-revenue-total').textContent = revTotal.toLocaleString('fr-CA') + ' $';
+  document.getElementById('cash-expense-total').textContent = expTotal.toLocaleString('fr-CA') + ' $';
+  document.getElementById('cash-net-total').textContent = netTotal.toLocaleString('fr-CA') + ' $';
+  document.getElementById('cash-margin').textContent = revTotal > 0 ? Math.round((netTotal/revTotal)*100) + '%' : '0%';
+}
+
+document.getElementById('cash-year-input').addEventListener('input', renderCashflow);
+
+document.getElementById('export-exp').addEventListener('click', ()=>{
+  const list = getExpenseData(currentExpYear, currentExpMonth);
+  const rows = [["Mois", MONTH_NAMES[currentExpMonth] + " " + currentExpYear]];
+  rows.push(["Catégorie","Montant","Date","Lien facture","Note"]);
+  list.forEach(e => rows.push([e.category, e.amount, e.date, e.link, e.note]));
+  downloadCSV('depenses_' + MONTH_NAMES[currentExpMonth] + '_' + currentExpYear + '.csv', rows);
+});
+document.getElementById('export-exp-year').addEventListener('click', ()=>{
+  const rows = [["Mois","Catégorie","Montant","Date","Lien facture","Note"]];
+  for(let m=0; m<12; m++){
+    const list = getExpenseData(currentExpYear, m);
+    list.forEach(e => rows.push([MONTH_NAMES[m] + " " + currentExpYear, e.category, e.amount, e.date, e.link, e.note]));
+  }
+  downloadCSV('depenses_annee_' + currentExpYear + '.csv', rows);
+});
+document.getElementById('export-cash').addEventListener('click', ()=>{
+  const y = +document.getElementById('cash-year-input').value || currentYear;
+  const rows = [["Mois","Revenus","Dépenses","Net"]];
+  for(let m=0; m<12; m++){
+    const rev = monthRevenue(y, m);
+    const exp = monthExpenseTotal(y, m);
+    rows.push([MONTH_NAMES[m], rev, exp, rev - exp]);
+  }
+  downloadCSV('cashflow_' + y + '.csv', rows);
+});
+
+function getAllUnitNames(){
+  // Utilise les unités du mois courant comme référence — la liste des 20
+  // logements ne change pas, seul le locataire à l'intérieur peut changer.
+  const data = getMonthData(currentYear, currentMonth);
+  return data.units.map(u => u.unit);
+}
+
+function renderReq(){
+  const list = document.getElementById('req-list');
+  list.innerHTML = '';
+  const unitOptions = getAllUnitNames();
+  state.requests.forEach(r=>{
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.innerHTML = `
+      <div class="card-row">
+        <select data-id="${r.id}" data-field="unit" style="flex:1;">
+          <option value="" ${!r.unit?'selected':''}>Choisir une unité</option>
+          ${unitOptions.map(u => `<option value="${u}" ${r.unit===u?'selected':''}>${u}</option>`).join('')}
+        </select>
+        <select data-id="${r.id}" data-field="status" style="flex:none; width:120px;">
+          <option value="new" ${r.status==='new'?'selected':''}>Nouveau</option>
+          <option value="progress" ${r.status==='progress'?'selected':''}>En cours</option>
+          <option value="resolved" ${r.status==='resolved'?'selected':''}>Résolu</option>
+        </select>
+        <button class="btn" data-id="${r.id}" data-action="del-req">Supprimer</button>
+      </div>
+      <input data-id="${r.id}" data-field="text" value="${r.text}" placeholder="Description de la demande">
+    `;
+    list.appendChild(card);
+  });
+  list.querySelectorAll('input,select').forEach(el=>{
+    el.addEventListener('input', e=>{
+      if(!unlocked) return;
+      const id = e.target.dataset.id;
+      const field = e.target.dataset.field;
+      state.requests = state.requests.map(r => String(r.id)===id ? {...r, [field]: e.target.value} : r);
+      saveState();
+    });
+  });
+  list.querySelectorAll('[data-action="del-req"]').forEach(btn=>{
+    btn.addEventListener('click', e=>{
+      if(!unlocked) return;
+      const id = e.target.dataset.id;
+      state.requests = state.requests.filter(r => String(r.id) !== id);
+      renderReq();
+      saveState();
+    });
+  });
+  applyLockUI();
+}
+
+function renderTask(){
+  const list = document.getElementById('task-list');
+  list.innerHTML = '';
+  state.tasks.forEach(t=>{
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.innerHTML = `
+      <div class="card-row">
+        <input data-id="${t.id}" data-field="title" value="${t.title}" placeholder="Titre de la tâche">
+        <input data-id="${t.id}" data-field="due" type="date" value="${t.due}" style="flex:none; width:150px;">
+        <select data-id="${t.id}" data-field="status" style="flex:none; width:120px;">
+          <option value="open" ${t.status==='open'?'selected':''}>À faire</option>
+          <option value="progress" ${t.status==='progress'?'selected':''}>En cours</option>
+          <option value="done" ${t.status==='done'?'selected':''}>Terminé</option>
+        </select>
+        <button class="btn" data-id="${t.id}" data-action="del-task">Supprimer</button>
+      </div>
+    `;
+    list.appendChild(card);
+  });
+  list.querySelectorAll('input,select').forEach(el=>{
+    el.addEventListener('input', e=>{
+      if(!unlocked) return;
+      const id = e.target.dataset.id;
+      const field = e.target.dataset.field;
+      state.tasks = state.tasks.map(t => String(t.id)===id ? {...t, [field]: e.target.value} : t);
+      saveState();
+    });
+  });
+  list.querySelectorAll('[data-action="del-task"]').forEach(btn=>{
+    btn.addEventListener('click', e=>{
+      if(!unlocked) return;
+      const id = e.target.dataset.id;
+      state.tasks = state.tasks.filter(t => String(t.id) !== id);
+      renderTask();
+      saveState();
+    });
+  });
+  applyLockUI();
+}
+
+function renderYears(){
+  const body = document.getElementById('year-body');
+  body.innerHTML = '';
+  Object.keys(state.years).sort().forEach(y=>{
+    const d = state.years[y];
+    const net = (Number(d.revenue)||0) - (Number(d.expenses)||0);
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${y}</td>
+      <td>${(Number(d.revenue)||0).toLocaleString('fr-CA')} $</td>
+      <td>${(Number(d.expenses)||0).toLocaleString('fr-CA')} $</td>
+      <td class="${net >= 0 ? 'net positive' : 'net negative'}">${net.toLocaleString('fr-CA')} $</td>
+      <td>${d.occupancy || 0}%</td>
+      <td>${d.late || 0}</td>
+    `;
+    body.appendChild(tr);
+  });
+}
+
+document.getElementById('add-req').addEventListener('click', ()=>{
+  if(!unlocked) return;
+  state.requests.push({id: Date.now(), unit: "", text: "", status: "new"});
+  renderReq();
+  saveState();
+});
+document.getElementById('add-task').addEventListener('click', ()=>{
+  if(!unlocked) return;
+  state.tasks.push({id: Date.now(), title: "Nouvelle tâche", due: "", status: "open"});
+  renderTask();
+  saveState();
+});
+document.getElementById('save-year').addEventListener('click', ()=>{
+  if(!unlocked) return;
+  const y = document.getElementById('year-input').value;
+  state.years[y] = {
+    revenue: +document.getElementById('y-revenue').value || 0,
+    expenses: +document.getElementById('y-expenses').value || 0,
+    occupancy: +document.getElementById('y-occupancy').value || 0,
+    late: +document.getElementById('y-late').value || 0
+  };
+  renderYears();
+  saveState();
+});
+
+// Tabs
+document.querySelectorAll('.tab-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('view-' + btn.dataset.tab).classList.add('active');
+    if(btn.dataset.tab === 'cash') renderCashflow();
+  });
+});
+
+// CSV export helpers
+function downloadCSV(filename, rows){
+  const csv = rows.map(r => r.map(cell => {
+    const s = String(cell ?? '');
+    return s.includes(',') || s.includes('"') || s.includes('\n')
+      ? '"' + s.replace(/"/g, '""') + '"'
+      : s;
+  }).join(',')).join('\n');
+  const blob = new Blob(["\uFEFF" + csv], {type: 'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+document.getElementById('export-pay').addEventListener('click', ()=>{
+  const data = getMonthData(currentYear, currentMonth);
+  const rows = [["Mois", MONTH_NAMES[currentMonth] + " " + currentYear]];
+  rows.push(["Unité","Locataire","Loyer","Statut","Note"]);
+  data.units.forEach(u => rows.push([u.unit, u.tenant, u.rent, u.status, u.note]));
+  downloadCSV('paiements_' + MONTH_NAMES[currentMonth] + '_' + currentYear + '.csv', rows);
+});
+document.getElementById('export-pay-year').addEventListener('click', ()=>{
+  const rows = [["Mois","Unité","Locataire","Loyer","Statut","Note"]];
+  for(let m=0; m<12; m++){
+    const data = getMonthData(currentYear, m);
+    data.units.forEach(u => rows.push([MONTH_NAMES[m] + " " + currentYear, u.unit, u.tenant, u.rent, u.status, u.note]));
+  }
+  downloadCSV('paiements_annee_' + currentYear + '.csv', rows);
+});
+document.getElementById('export-req').addEventListener('click', ()=>{
+  const rows = [["Unité","Description","Statut"]];
+  state.requests.forEach(r => rows.push([r.unit, r.text, r.status]));
+  downloadCSV('demandes_locataires.csv', rows);
+});
+document.getElementById('export-task').addEventListener('click', ()=>{
+  const rows = [["Titre","Échéance","Statut"]];
+  state.tasks.forEach(t => rows.push([t.title, t.due, t.status]));
+  downloadCSV('taches.csv', rows);
+});
+document.getElementById('export-year').addEventListener('click', ()=>{
+  const rows = [["Année","Revenus","Dépenses","Net","Occupation (%)","Mois retard"]];
+  Object.keys(state.years).sort().forEach(y=>{
+    const d = state.years[y];
+    const net = (Number(d.revenue)||0) - (Number(d.expenses)||0);
+    rows.push([y, d.revenue||0, d.expenses||0, net, d.occupancy||0, d.late||0]);
+  });
+  downloadCSV('portrait_annuel.csv', rows);
+});
+
+// On attend que Firebase confirme la connexion avant de charger les données
+// et de démarrer l'application. Tant que personne n'est connecté, rien ne
+// s'exécute (l'écran de connexion reste affiché).
+let firebaseLoaded = false;
+window.addEventListener('firebase-ready', async () => {
+  if(firebaseLoaded) return; // évite de recharger si l'événement se déclenche plusieurs fois
+  firebaseLoaded = true;
+  await loadState();
+  renderPay();
+  renderExp();
+  renderReq();
+  renderTask();
+  renderYears();
+  applyLockUI();
+});
+</script>
+</div>
+</body>
+</html>
