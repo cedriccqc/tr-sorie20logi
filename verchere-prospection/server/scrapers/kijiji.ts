@@ -413,6 +413,7 @@ export async function connexionKijiji(email: string, motDePasse: string) {
  * exclusion, `.first()` tombe dessus et attend une visibilite qui n'arrive jamais.
  */
 const TEXTAREA_MESSAGE = [
+  'textarea[data-testid="text-area-message"]',
   'textarea[name="message"]',
   'textarea[id*="message" i]',
   'textarea[placeholder*="essage" i]',
@@ -569,6 +570,27 @@ async function viderChampNatif(zone: any) {
       el.dispatchEvent(new Event("change", { bubbles: true }));
     });
   } catch {}
+}
+
+/**
+ * Tape le message par blocs, avec un delai « humain » par caractere.
+ * Un seul appel `type()` sur un long message (500 caracteres et plus)
+ * depasse la limite de 30 s de Playwright et echoue avant la fin de la saisie.
+ */
+async function taperMessage(zone: any, message: string) {
+  const TAILLE_BLOC = 40;
+  for (let i = 0; i < message.length; i += TAILLE_BLOC) {
+    const bloc = message.slice(i, i + TAILLE_BLOC);
+    const delai = 18 + Math.random() * 30;
+    try {
+      await zone.pressSequentially(bloc, { delay: delai, timeout: 30000 });
+    } catch {
+      // Champ re-rendu ou clavier capricieux : on complete au remplissage direct.
+      await zone.fill(message, { timeout: 15000 }).catch(() => {});
+      return;
+    }
+    if (i + TAILLE_BLOC < message.length) await jitter(80, 250);
+  }
 }
 
 const normaliser = (s: string) =>
@@ -809,11 +831,11 @@ export async function envoyerMessageKijiji(
     }
 
     // --- Ecrire notre message --------------------------------------------
-    await zone.type(message, { delay: 25 + Math.random() * 45 });
+    await taperMessage(zone, message);
     await jitter(700, 1400);
     if (normaliser(await lireChamp(zone)) !== normaliser(message)) {
       // Deuxieme chance : remplissage direct.
-      await zone.fill(message).catch(() => {});
+      await zone.fill(message, { timeout: 15000 }).catch(() => {});
       await jitter(400, 800);
     }
 
