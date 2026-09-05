@@ -1,0 +1,18 @@
+run = "npm start"
+entrypoint = "server/index.ts"
+
+[nix]
+channel = "stable-24_05"
+
+[deployment]
+run = ["sh", "-c", "npm run build && npm start"]
+build = ["sh", "-c", "npm install && npm run build"]
+deploymentTarget = "cloudrun"
+
+[[ports]]
+localPort = 5000
+externalPort = 80
+
+[env]
+NODE_ENV = "production"
+PLAYWRIGHT_BROWSERS_PATH = "/home/runner/.cache/ms-playwright"

@@ -1,0 +1,44 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-marine-50 text-marine-900 font-sans antialiased;
+  }
+}
+
+@layer components {
+  .carte {
+    @apply bg-white rounded-xl border border-marine-100 shadow-sm;
+  }
+  .titre-section {
+    @apply text-lg font-semibold text-marine-900;
+  }
+  .sous-titre {
+    @apply text-sm text-marine-600/70;
+  }
+  .btn {
+    @apply inline-flex items-center gap-2 rounded-lg px-3.5 py-2 text-sm font-medium transition
+           disabled:opacity-40 disabled:cursor-not-allowed;
+  }
+  .btn-primaire {
+    @apply btn bg-marine-800 text-white hover:bg-marine-700;
+  }
+  .btn-secondaire {
+    @apply btn bg-white border border-marine-200 text-marine-800 hover:bg-marine-50;
+  }
+  .btn-danger {
+    @apply btn bg-rose-600 text-white hover:bg-rose-500;
+  }
+  .champ {
+    @apply w-full rounded-lg border border-marine-200 bg-white px-3 py-2 text-sm
+           outline-none focus:border-marine-600 focus:ring-2 focus:ring-marine-600/15;
+  }
+  .etiquette {
+    @apply text-xs font-semibold uppercase tracking-wide text-marine-600/70;
+  }
+  .puce {
+    @apply inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium;
+  }
+}
