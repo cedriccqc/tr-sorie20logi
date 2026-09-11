@@ -45,11 +45,17 @@ echo   Interface : http://localhost:5000
 echo   Laissez cette fenetre ouverte. Fermez-la pour arreter.
 echo.
 
-timeout /t 3 >nul
-start "" http://localhost:5000
+echo   Si la page affiche "site inaccessible", attendez quelques
+echo   secondes puis cliquez "Actualiser" : le serveur finit de demarrer.
+echo.
 
 set NODE_ENV=production
 set PORT=5000
+
+REM Ouvre le navigateur seulement apres un court delai, le temps que
+REM le serveur soit pret (evite le "site inaccessible" au demarrage).
+start "" /b cmd /c "timeout /t 8 >nul & start "" http://localhost:5000"
+
 call npx tsx server/index.ts
 
 goto fin
