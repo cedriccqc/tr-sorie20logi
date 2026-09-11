@@ -4,11 +4,14 @@ import path from "path";
 import { fileURLToPath } from "url";
 import { newContext, jitter, scrollProgressif, navigateurVisible } from "../browser.js";
 import { storage } from "../storage.js";
+import { APP_VERSION } from "../../shared/types.js";
 import { VILLES, CATEGORIES } from "../../config/territoire.ts";
 
 const BASE = "https://www.kijiji.ca";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const DATA_DIR = process.env.DATA_DIR || path.resolve(__dirname, "../../data");
+/** Délai max de chargement d'une annonce à l'envoi (ms). Réglable pour les tests/diagnostics. */
+const GOTO_TIMEOUT_MS = Number(process.env.KIJIJI_GOTO_TIMEOUT_MS) || 45000;
 
 function slug(s: string) {
   return s
@@ -464,6 +467,8 @@ export type ResultatEnvoiKijiji =
       ok: false;
       ignore: true;
       raison: string;
+      /** Kijiji indique qu'une conversation existe deja avec ce vendeur. */
+      dejaSurKijiji?: boolean;
       vendeurId: string | null;
       vendeurNom: string | null;
     };
@@ -745,6 +750,27 @@ async function trouverBoutonEnvoi(zone: any) {
   return null;
 }
 
+/**
+ * Une conversation avec ce vendeur existe-t-elle deja sur Kijiji ?
+ * On cherche le lien/bouton precis (pas le texte libre d'une description,
+ * qui pourrait contenir des mots semblables par hasard).
+ */
+async function conversationExistante(page: Page): Promise<boolean> {
+  const lien = await page
+    .locator(
+      'a:has-text("Voir la conversation"), button:has-text("Voir la conversation"), ' +
+        'a:has-text("View conversation"), button:has-text("View conversation"), ' +
+        'a:has-text("Continuer la conversation"), button:has-text("Continue the conversation"), ' +
+        'a[href*="m-msg-my-messages"]:has-text("conversation")',
+    )
+    .first()
+    .isVisible({ timeout: 1200 })
+    .catch(() => false);
+  if (lien) return true;
+  const texte = await page.innerText("body").catch(() => "");
+  return /vous avez d[ée]j[àa] envoy[ée] un message|you('ve| have) already sent a message/i.test(texte);
+}
+
 export async function envoyerMessageKijiji(
   url: string,
   message: string,
@@ -762,21 +788,42 @@ export async function envoyerMessageKijiji(
 
   const ctx = await newContext("kijiji");
   const page = await ctx.newPage();
+  // Etape en cours : prefixe des messages d'erreur, pour savoir OU ca bloque.
+  let etape = "ouverture de la page";
   try {
-    await page.goto(url, { waitUntil: "domcontentloaded", timeout: 45000 });
+    await page.goto(url, { waitUntil: "domcontentloaded", timeout: GOTO_TIMEOUT_MS });
     await jitter(1200, 2600);
 
+    etape = "vérification de la session";
     const blocage = await diagnostiquerBlocage(page);
     if (blocage) throw new Error(blocage);
 
     // --- Qui est le vendeur ? (anti-doublon) --------------------------------
+    etape = "identification du vendeur";
     const { vendeurId, vendeurNom } = await identifierVendeur(page);
     if (options.vendeurDejaContacte) {
       const raison = options.vendeurDejaContacte(vendeurId, vendeurNom);
       if (raison) return { ok: false, ignore: true, raison, vendeurId, vendeurNom };
     }
 
+    // --- Conversation deja ouverte avec ce vendeur sur Kijiji ? ------------
+    // Apres un premier message, Kijiji remplace le formulaire par un lien
+    // « Voir la conversation ». Inutile (et nuisible) de reecrire.
+    etape = "détection d'une conversation existante";
+    if (await conversationExistante(page)) {
+      return {
+        ok: false,
+        ignore: true,
+        dejaSurKijiji: true,
+        raison:
+          "Kijiji indique qu'une conversation existe déjà avec ce vendeur — contact marqué « contacté », rien renvoyé.",
+        vendeurId,
+        vendeurNom,
+      };
+    }
+
     // Le formulaire est souvent replie derriere un bouton.
+    etape = "ouverture du formulaire de contact";
     for (const sel of [
       'button:has-text("Contacter le vendeur")',
       'button:has-text("Contacter")',
@@ -797,8 +844,20 @@ export async function envoyerMessageKijiji(
       } catch {}
     }
 
+    etape = "recherche du champ de message";
     const zone = await trouverChampMessage(page, 15000);
     if (!zone) {
+      if (await conversationExistante(page)) {
+        return {
+          ok: false,
+          ignore: true,
+          dejaSurKijiji: true,
+          raison:
+            "Kijiji indique qu'une conversation existe déjà avec ce vendeur — contact marqué « contacté », rien renvoyé.",
+          vendeurId,
+          vendeurNom,
+        };
+      }
       const blocage2 = await diagnostiquerBlocage(page);
       const capture = await capturerEcran(page, "envoi-kijiji");
       throw new Error(
@@ -810,6 +869,7 @@ export async function envoyerMessageKijiji(
     // --- Vider le champ ---------------------------------------------------
     // Kijiji pre-remplit une question generique ("Is this still available?").
     // Si on ne la retire pas, c'est ELLE qui part.
+    etape = "vidage du champ pré-rempli";
     await zone.click();
     await jitter(200, 400);
     await zone.fill("").catch(() => {});
@@ -831,6 +891,7 @@ export async function envoyerMessageKijiji(
     }
 
     // --- Ecrire notre message --------------------------------------------
+    etape = "saisie du message";
     await taperMessage(zone, message);
     await jitter(700, 1400);
     if (normaliser(await lireChamp(zone)) !== normaliser(message)) {
@@ -840,6 +901,7 @@ export async function envoyerMessageKijiji(
     }
 
     // --- GARDE-FOU 1 : le champ contient exactement notre message ----------
+    etape = "vérification du contenu du champ";
     const contenu = await lireChamp(zone);
     if (normaliser(contenu) !== normaliser(message)) {
       const capture = await capturerEcran(page, "envoi-kijiji-contenu-different");
@@ -851,6 +913,7 @@ export async function envoyerMessageKijiji(
     }
 
     // --- Bouton d'envoi : uniquement dans le formulaire du champ -----------
+    etape = "recherche du bouton Envoyer";
     const trouve = await trouverBoutonEnvoi(zone);
     if (!trouve) {
       const capture = await capturerEcran(page, "envoi-kijiji-bouton");
@@ -896,6 +959,7 @@ export async function envoyerMessageKijiji(
       );
     }
 
+    etape = "clic sur Envoyer";
     await trouve.bouton.click();
     // A partir d'ici, un message a PEUT-ETRE ete envoye : on ne leve plus
     // d'erreur (sauf preuve que la requete a ete bloquee), on RAPPORTE.
@@ -920,6 +984,7 @@ export async function envoyerMessageKijiji(
     const accuse = /message (a été )?envoyé|votre message a été|message sent|your message has been/i.test(corps);
     const confirme = observe.notre || accuse || !champApres || champVide;
 
+    etape = "confirmation de l'envoi";
     const blocageApres = await diagnostiquerBlocage(page);
     if (blocageApres && !confirme) {
       // Bloque APRES le clic : on ne sait pas si le message est parti.
@@ -954,6 +1019,14 @@ export async function envoyerMessageKijiji(
       vendeurId,
       vendeurNom,
     };
+  } catch (e) {
+    const err = e as Error;
+    // Prefixe version + etape : on sait exactement quelle version tourne et
+    // ou l'envoi s'est arrete. (Une seule fois, meme si l'erreur remonte.)
+    if (!err.message.startsWith("[v")) {
+      err.message = `[v${APP_VERSION} · étape : ${etape}] ${err.message}`;
+    }
+    throw err;
   } finally {
     await ctx.close().catch(() => {});
   }

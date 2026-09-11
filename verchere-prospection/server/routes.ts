@@ -23,6 +23,7 @@ import {
   rendreMessage,
   planifierCampagne,
 } from "./campaign.ts";
+import { APP_VERSION } from "../shared/types.js";
 import type { ScrapeJob } from "../shared/types.js";
 
 export const router = Router();
@@ -61,6 +62,7 @@ function nouveauJob(plateforme: "kijiji" | "facebook", motsCles: string[], ville
 router.get("/config", (_req, res) => {
   res.json({
     marque: "VERCHERE",
+    version: APP_VERSION,
     villes: VILLES.map(({ value, label, region }) => ({ value, label, region })),
     regions: REGIONS,
     categories: CATEGORIES,

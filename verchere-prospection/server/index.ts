@@ -3,6 +3,7 @@ import path from "path";
 import fs from "fs";
 import { fileURLToPath } from "url";
 import { router } from "./routes.ts";
+import { APP_VERSION } from "../shared/types.js";
 import { closeBrowser } from "./browser.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -42,7 +43,7 @@ app.use((req, _res, next) => {
 
 app.use("/api", router);
 
-app.get("/api/health", (_req, res) => res.json({ ok: true, service: "verchere-prospection" }));
+app.get("/api/health", (_req, res) => res.json({ ok: true, service: "verchere-prospection", version: APP_VERSION }));
 
 // Interface compilee (production)
 const dist = path.resolve(__dirname, "../dist/public");
@@ -66,7 +67,7 @@ app.use((err: any, _req: any, res: any, _next: any) => {
 });
 
 const server = app.listen(PORT, HOST, () => {
-  console.log(`Verchere Prospection — serveur sur http://localhost:${PORT}`);
+  console.log(`Verchere Prospection v${APP_VERSION} — serveur sur http://localhost:${PORT}`);
   console.log(
     HOST === "127.0.0.1"
       ? "Accès restreint à cet ordinateur uniquement."

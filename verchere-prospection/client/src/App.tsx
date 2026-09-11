@@ -87,8 +87,8 @@ export default function App() {
         </div>
 
         <footer className="pb-6 pt-2 text-center text-xs text-marine-600/50">
-          Verchere — outil interne de prospection. Respectez les conditions d'utilisation des
-          plateformes et la Loi 25 sur les renseignements personnels.
+          Verchere — outil interne de prospection · version {config?.version || "?"}
+          {" "}· Respectez les conditions d'utilisation des plateformes et la Loi 25.
         </footer>
       </main>
 

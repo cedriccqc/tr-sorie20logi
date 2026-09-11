@@ -185,7 +185,12 @@ export async function demarrerCampagne(
               at: new Date().toISOString(),
             });
           } else if (p === "kijiji") {
-            const r = await envoyerMessageKijiji(contact.url, message, {
+            // Une page lente ou une coupure reseau ne doit pas condamner le
+            // contact : on refait UN essai sur erreur transitoire.
+            let r!: Awaited<ReturnType<typeof envoyerMessageKijiji>>;
+            for (let tentative = 1; ; tentative++) {
+              try {
+                r = await envoyerMessageKijiji(contact.url, message, {
               vendeurDejaContacte: (vendeurId, vendeurNom) => {
                 const cle = vendeurId
                   ? `id:${vendeurId}`
@@ -206,7 +211,27 @@ export async function demarrerCampagne(
                 vendeursServis.set(cle, contact.id);
                 return null;
               },
-            });
+                });
+                break;
+              } catch (e) {
+                const msg = (e as Error).message;
+                const transitoire =
+                  !(e instanceof ErreurContenuMessage) &&
+                  /Timeout \d+m?s? exceeded|Timeout .*exceeded|net::ERR|Navigation failed|Target closed|browser has been closed/i.test(msg);
+                if (tentative === 1 && transitoire) {
+                  etat.results.push({
+                    contactId: contact.id,
+                    ok: false,
+                    ignore: true,
+                    message: `Page lente — nouvel essai automatique. (${msg.slice(0, 160)})`,
+                    at: new Date().toISOString(),
+                  });
+                  await attendre(4000 + Math.random() * 4000);
+                  continue;
+                }
+                throw e;
+              }
+            }
             // On memorise le vendeur meme si on ignore : utile la prochaine fois.
             if (r.vendeurId || r.vendeurNom) {
               storage.updateContact(contact.id, {
@@ -216,6 +241,16 @@ export async function demarrerCampagne(
               });
             }
             if (r.ok === false) {
+              if (r.dejaSurKijiji) {
+                // Kijiji confirme qu'on a deja ecrit a ce vendeur : on aligne
+                // le journal pour que les prochaines campagnes l'ignorent.
+                storage.markContacted([contact.id]);
+                storage.updateContact(contact.id, {
+                  notes: [contact.notes, "Conversation déjà ouverte sur Kijiji (détectée à l'envoi)."]
+                    .filter(Boolean)
+                    .join("\n"),
+                });
+              }
               etat.results.push({
                 contactId: contact.id,
                 ok: false,
