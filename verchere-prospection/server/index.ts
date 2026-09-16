@@ -5,6 +5,7 @@ import { fileURLToPath } from "url";
 import { router } from "./routes.ts";
 import { APP_VERSION } from "../shared/types.js";
 import { closeBrowser } from "./browser.js";
+import { DATA_DIR } from "./storage.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -68,6 +69,7 @@ app.use((err: any, _req: any, res: any, _next: any) => {
 
 const server = app.listen(PORT, HOST, () => {
   console.log(`Verchere Prospection v${APP_VERSION} — serveur sur http://localhost:${PORT}`);
+  console.log(`Données stockées dans : ${DATA_DIR}`);
   console.log(
     HOST === "127.0.0.1"
       ? "Accès restreint à cet ordinateur uniquement."

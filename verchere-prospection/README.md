@@ -18,6 +18,36 @@ services synchronisent et verrouillent les fichiers, ce qui fait échouer
 l'installation (`EBUSY`, `EPERM`). Un chemin trop long ou avec beaucoup
 d'accents pose aussi problème sur Windows.
 
+## Vos données sont conservées entre les versions
+
+Depuis la v1.2.4, les données (contacts, modèles de message, session Kijiji,
+cadence) ne sont **plus** rangées dans le dossier de l'application. Elles vont
+dans un emplacement stable, propre à votre session Windows :
+
+```
+%LOCALAPPDATA%\verchere\data\verchere.json
+```
+
+(sous macOS/Linux : `~/.verchere/data/verchere.json`). Le chemin exact est
+affiché au démarrage du serveur, dans la fenêtre noire.
+
+**Résultat :** vous pouvez remplacer le dossier de l'application par une
+nouvelle version sans rien perdre.
+
+### Récupérer des données d'une ancienne version
+
+Si vous aviez déjà des contacts dans une version précédente (données rangées
+dans `verchere-prospection\data\verchere.json` à l'intérieur de l'ancien
+dossier) :
+
+1. Retrouvez l'ancien fichier `verchere.json` (recherche Windows du nom
+   `verchere.json`, ou dans l'ancien dossier sous `data\`).
+2. Copiez-le dans le dossier `data` de la **nouvelle** application
+   (`...\verchere-prospection\data\verchere.json`). Créez le dossier `data`
+   s'il n'existe pas.
+3. Lancez l'application : au démarrage, elle rapatrie automatiquement ces
+   données vers l'emplacement stable. C'est fait une seule fois.
+
 ## Démarrage
 
 ```bash

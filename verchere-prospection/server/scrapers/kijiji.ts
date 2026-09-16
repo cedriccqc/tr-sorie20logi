@@ -3,13 +3,12 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import { newContext, jitter, scrollProgressif, navigateurVisible } from "../browser.js";
-import { storage } from "../storage.js";
+import { storage, DATA_DIR } from "../storage.js";
 import { APP_VERSION } from "../../shared/types.js";
 import { VILLES, CATEGORIES } from "../../config/territoire.ts";
 
 const BASE = "https://www.kijiji.ca";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const DATA_DIR = process.env.DATA_DIR || path.resolve(__dirname, "../../data");
 /** Délai max de chargement d'une annonce à l'envoi (ms). Réglable pour les tests/diagnostics. */
 const GOTO_TIMEOUT_MS = Number(process.env.KIJIJI_GOTO_TIMEOUT_MS) || 45000;
 

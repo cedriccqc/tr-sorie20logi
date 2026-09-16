@@ -4,8 +4,48 @@ import { fileURLToPath } from "url";
 import type { Contact, Template, CadenceLimits, Statut, Stats } from "../shared/types.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const DATA_DIR = process.env.DATA_DIR || path.resolve(__dirname, "../data");
+
+/** Ancien emplacement : le dossier « data » DANS l'application (perdu à chaque mise à jour). */
+const LEGACY_DATA_DIR = path.resolve(__dirname, "../data");
+
+/**
+ * Emplacement STABLE des données, indépendant du dossier de l'application, pour
+ * qu'une mise à jour (nouveau dossier) ne fasse plus jamais perdre les contacts
+ * et les modèles. Ordre : DATA_DIR explicite > dossier utilisateur > repli local.
+ *  - Windows : %LOCALAPPDATA%\verchere\data (hors OneDrive)
+ *  - macOS/Linux : ~/.verchere/data
+ */
+function resolveDataDir(): string {
+  if (process.env.DATA_DIR) return process.env.DATA_DIR;
+  const localAppData = process.env.LOCALAPPDATA || process.env.APPDATA;
+  if (localAppData) return path.join(localAppData, "verchere", "data");
+  if (process.env.HOME) return path.join(process.env.HOME, ".verchere", "data");
+  return LEGACY_DATA_DIR;
+}
+
+const DATA_DIR = resolveDataDir();
 const DB_FILE = path.join(DATA_DIR, "verchere.json");
+export { DATA_DIR };
+
+/**
+ * Récupération automatique : si l'emplacement stable est vide mais qu'un ancien
+ * « data/verchere.json » existe (dans l'application), on le rapatrie une fois.
+ * Ainsi, en glissant un vieux dossier « data » dans la nouvelle application,
+ * les données remontent toutes seules au démarrage.
+ */
+function migrerAnciennesDonnees() {
+  try {
+    if (fs.existsSync(DB_FILE)) return; // déjà des données à l'emplacement stable
+    const ancien = path.join(LEGACY_DATA_DIR, "verchere.json");
+    if (LEGACY_DATA_DIR === DATA_DIR || !fs.existsSync(ancien)) return;
+    fs.mkdirSync(DATA_DIR, { recursive: true });
+    fs.copyFileSync(ancien, DB_FILE);
+    console.log(`[storage] Données récupérées depuis l'ancien dossier :\n  ${ancien}\n  -> ${DB_FILE}`);
+  } catch (e) {
+    console.warn("[storage] Récupération des anciennes données impossible :", (e as Error).message);
+  }
+}
+migrerAnciennesDonnees();
 
 interface DBShape {
   contacts: Contact[];
