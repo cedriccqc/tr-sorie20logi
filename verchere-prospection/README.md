@@ -9,6 +9,15 @@ dans le Grand Montréal, les Laurentides, la Rive-Nord, Lanaudière, Québec et 
 
 ---
 
+## Où mettre le dossier (important)
+
+Placez `verchere-prospection` dans un **chemin court et local**, par exemple
+`C:\verchere`. **N'installez pas** le dossier dans OneDrive, SharePoint, un
+dossier d'entreprise « ... - Documents », Dropbox ou Google Drive : ces
+services synchronisent et verrouillent les fichiers, ce qui fait échouer
+l'installation (`EBUSY`, `EPERM`). Un chemin trop long ou avec beaucoup
+d'accents pose aussi problème sur Windows.
+
 ## Démarrage
 
 ```bash

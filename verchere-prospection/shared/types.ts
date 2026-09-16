@@ -1,5 +1,5 @@
 /** Version de l'application — affichée dans l'interface et les erreurs. */
-export const APP_VERSION = "1.2.2";
+export const APP_VERSION = "1.2.3";
 
 export type Plateforme = "kijiji" | "facebook";
 
